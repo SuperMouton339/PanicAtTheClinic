@@ -1,0 +1,4 @@
+P4PORT=ssl:perforce.uqat.ca:1666
+P4USER=carj71
+P4CLIENT=carj71_UMTL1-10210
+P4IGNORE=.p4ignore.txt;.gitignore
