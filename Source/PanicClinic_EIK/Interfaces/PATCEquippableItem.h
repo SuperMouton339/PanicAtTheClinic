@@ -19,9 +19,9 @@ public:
 	//Though I read online that it is indeed the way to use interfaces in this context, might just be my preference for component-based approaches talking. - Jacob
 	
 	
-	UFUNCTION()
-	PANICCLINIC_EIK_API virtual void OnStarted(APlayerController* InstigatorPC) = 0;
+	UFUNCTION(BlueprintNativeEvent)
+	void OnStarted(ACharacter* InstigatorCharacter);
 	
-	UFUNCTION()
-	PANICCLINIC_EIK_API virtual void OnTriggered(APlayerController* InstigatorPC) = 0;
+	UFUNCTION(BlueprintNativeEvent)
+	void OnTriggered(ACharacter* InstigatorCharacter);
 };

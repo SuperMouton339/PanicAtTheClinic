@@ -8,7 +8,7 @@ public class EIKShared : ModuleRules
 {
 	public EIKShared(ReadOnlyTargetRules Target) : base(Target)
 	{
-		PublicDependencyModuleNames.AddRange(new string[] { "EIKSDK" });
+		PublicDependencyModuleNames.AddRange(new string[] { "EIKSDK", "EOSSDK" });
 		Type = ModuleType.CPlusPlus;
 		PrivatePCHHeaderFile = "Private/EIKSharedModule.h";
 

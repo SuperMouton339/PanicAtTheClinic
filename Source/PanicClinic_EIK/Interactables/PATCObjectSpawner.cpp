@@ -3,6 +3,7 @@
 
 #include "PATCObjectSpawner.h"
 
+#include "GameFramework/Character.h"
 #include "GameFramework/GameState.h"
 #include "GameFramework/GameStateBase.h"
 #include "Net/UnrealNetwork.h"
@@ -60,11 +61,11 @@ void APATCObjectSpawner::Tick(float DeltaTime)
 	}
 }
 
-void APATCObjectSpawner::OnInteracted(APlayerController* InstigatorPC)
+void APATCObjectSpawner::OnInteracted_Implementation(ACharacter* InstigatorCharacter)
 {
 	if (bOnCooldown) return;
 	
-	if (!InstigatorPC->IsLocalController()) return;
+	if (!InstigatorCharacter->IsLocallyControlled()) return;
 	
 	//TODO - Pop selection UI for local controller that interacted with this.
 }

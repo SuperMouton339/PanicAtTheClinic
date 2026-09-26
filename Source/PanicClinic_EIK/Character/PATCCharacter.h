@@ -7,9 +7,11 @@
 #include "PATCCharacter.generated.h"
 
 
+
 //Forward declaration
 class UInputAction;
 struct FInputActionValue;
+class UPATCInteractionDetector;
 
 UCLASS()
 class PANICCLINIC_EIK_API APATCCharacter : public ACharacter
@@ -32,6 +34,19 @@ protected:
 	
 	/** Temp Ground **/
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Components")
+	TObjectPtr<UPATCInteractionDetector> InteractionDetector;
+	
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+	void ServerInteract(AActor* ActorToInteract);
+	
+	void ServerInteract_Implementation(AActor* ActorToInteract);
+	
+	UPROPERTY(BlueprintReadOnly, Category="Equipment", ReplicatedUsing=OnRep_EquippedItem)
+	AActor* EquippedItem;
+	
+	UFUNCTION()
+	void OnRep_EquippedItem();
 	
 public:
 	// Called every frame
@@ -39,4 +54,12 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	
+	UFUNCTION(Server, Reliable)
+	void ServerEquipNewItem(AActor* ActorToEquip);
+	
+	void ServerEquipNewItem_Implementation(AActor* ActorToEquip);
+	
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+
 };

@@ -34,19 +34,19 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	EPATCTreatmentTypes TreatmentType;
 	
-	UPROPERTY()
-	APlayerController* OwningPlayerController;
+	UPROPERTY(Replicated)
+	ACharacter* OwningPlayer;
 	
 	UFUNCTION()
 	void OnRep_Uses();
 	
 public:
 	
-	virtual void OnInteracted(APlayerController* InstigatorPC) override;
+	virtual void OnInteracted_Implementation(ACharacter* InstigatorCharacter) override;
 
-	virtual void OnStarted(APlayerController* InstigatorPC) override;
+	virtual void OnStarted_Implementation(ACharacter* InstigatorCharacter) override;
 
-	virtual void OnTriggered(APlayerController* InstigatorPC) override
+	virtual void OnTriggered_Implementation(ACharacter* InstigatorCharacter) override
 	{
 		return;
 	}

@@ -17,7 +17,7 @@ class IPATCDeath
 public:
 
 	GENERATED_BODY()
-	//Gentleman's agreement to not override this in blueprint PLEASE
+	//Gentleman's agreement to not override this in blueprint without asking beforehand
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void OnDeath();
 };

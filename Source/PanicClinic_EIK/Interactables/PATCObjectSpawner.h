@@ -42,7 +42,7 @@ public:
 	
 	virtual void Tick(float DeltaTime) override;
 	
-	virtual void OnInteracted(APlayerController* InstigatorPC) override;
+	virtual void OnInteracted_Implementation(ACharacter* InstigatorCharacter) override;
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void ServerSpawnConsumable(TSubclassOf<AActor> ObjectToSpawn);

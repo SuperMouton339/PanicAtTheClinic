@@ -16,6 +16,6 @@ class IPATCInteractable
 	
 public:
 	
-	UFUNCTION()
-	PANICCLINIC_EIK_API virtual void OnInteracted(APlayerController* InstigatorPC) = 0;
+	UFUNCTION(BlueprintNativeEvent)
+	void OnInteracted(ACharacter* InstigatorCharacter);
 };

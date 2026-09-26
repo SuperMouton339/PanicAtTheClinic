@@ -14,7 +14,6 @@
 # Compiled Dynamic libraries
 *.so
 *.dylib
-*.dll
 
 # Fortran module files
 *.mod
@@ -73,7 +72,6 @@ Plugins/*/Intermediate/*
 Source/ThirdParty/EIKSDK/SDK/*
 Source/ThirdParty/EIKSDK/Samples/*
 Source/ThirdParty/EIKSDK/ThirdPartyNotices/*
-Source/ThirdParty/EIKSDK/Bin/*
 Source/ThirdParty/EIKSDK/Include/*
 !Source/ThirdParty/EIKSDK/Include/Android/
 !Source/ThirdParty/EIKSDK/Include/Android/eos_android.h

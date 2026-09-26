@@ -3,7 +3,9 @@
 
 #include "PATCConsumable.h"
 
+#include "GameFramework/Character.h"
 #include "Net/UnrealNetwork.h"
+#include "PanicClinic_EIK/Character/PATCCharacter.h"
 
 
 // Sets default values
@@ -32,9 +34,9 @@ void APATCConsumable::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>
 
 void APATCConsumable::OnRep_Uses()
 {
-	if (OwningPlayerController == nullptr) return;
+	if (OwningPlayer == nullptr) return;
 	
-	if (OwningPlayerController->IsLocalController())
+	if (OwningPlayer->IsLocallyControlled())
 	{
 		// Reasoning here is that only the owner (and if said owner is local) should see a change on his HUD related to the item's use.
 		
@@ -42,14 +44,23 @@ void APATCConsumable::OnRep_Uses()
 	}
 }
 
-void APATCConsumable::OnInteracted(APlayerController* InstigatorPC)
+void APATCConsumable::OnInteracted_Implementation(ACharacter* InstigatorCharacter)
 {
 	//TODO - Equip item (through server)
-		
-	if (InstigatorPC->IsLocalController())
+	
+	if (HasAuthority())
 	{
-		OwningPlayerController = InstigatorPC;
+		UE_LOG(LogTemp, Warning, TEXT("Currently being equipped by someone."));
+		
+		if (APATCCharacter* Character = Cast<APATCCharacter>(InstigatorCharacter))
+		{
+			Character->ServerEquipNewItem(this);
+			OwningPlayer = InstigatorCharacter;
+			SetActorHiddenInGame(true);
+		}
 	}
+		
+
 	/*
 	*Note: since this behavior should not differ between different types of equippable items, if we really want to avoid
 	*every type sharing a base class, this could be handled in a component to avoid having to repeat functions - Jacob
@@ -57,7 +68,7 @@ void APATCConsumable::OnInteracted(APlayerController* InstigatorPC)
 	return;
 }
 
-void APATCConsumable::OnStarted(APlayerController* InstigatorPC)
+void APATCConsumable::OnStarted_Implementation(ACharacter* InstigatorCharacter)
 {
 	//Since this is not blueprint callable, will need to be called by player controller
 	CurrentUses -= 1;

@@ -8,6 +8,11 @@
 #include "Camera/CameraComponent.h"
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
+#include "GameFramework/PlayerState.h"
+#include "Net/UnrealNetwork.h"
+#include "PanicClinic_EIK/Components/PATCInteractionDetector.h"
+#include "PanicClinic_EIK/Interfaces/PATCEquippableItem.h"
+#include "PanicClinic_EIK/Interfaces/PATCInteractable.h"
 
 // Sets default values
 APATCCharacter::APATCCharacter()
@@ -15,6 +20,11 @@ APATCCharacter::APATCCharacter()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	
+	bReplicates = true;
+	
+	InteractionDetector = CreateDefaultSubobject<UPATCInteractionDetector>(TEXT("InteractableDetector"));
+	InteractionDetector->SetCollisionProfileName(TEXT("InteractionDetector"));
+	InteractionDetector->SetupAttachment(GetRootComponent());
 }
 
 
@@ -44,6 +54,30 @@ void APATCCharacter::Move(const FInputActionValue& Value)
 	AddMovementInput(FVector::RightVector, Axis.X);
 }
 
+void APATCCharacter::ServerInteract_Implementation(AActor* ActorToInteract)
+{
+	if (ActorToInteract->Implements<UPATCInteractable>())
+	{
+		IPATCInteractable::Execute_OnInteracted(ActorToInteract, this);
+	}
+}
+
+void APATCCharacter::OnRep_EquippedItem()
+{
+
+
+	if (IsLocallyControlled())
+	{	//TODO - Apply changes to UI
+		if (EquippedItem == nullptr) return;
+		UE_LOG(LogTemp, Warning, TEXT("%s equipped %s"), *GetNetOwner()->GetName(), *EquippedItem->GetName());
+	}
+	
+	if (!IsLocallyControlled())
+	{
+		//TODO - Show every player that this player picked up an item (Player himself should've already handled the animations somewhere else)
+	}
+}
+
 // Called every frame
 void APATCCharacter::Tick(float DeltaTime)
 {
@@ -67,5 +101,19 @@ void APATCCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		}
 	}
 	
+}
+
+void APATCCharacter::ServerEquipNewItem_Implementation(AActor* ActorToEquip)
+{
+	if (ActorToEquip->Implements<UPATCEquippableItem>())
+	{
+		EquippedItem = ActorToEquip;
+	}
+}
+
+void APATCCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(APATCCharacter, EquippedItem);
 }
 

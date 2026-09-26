@@ -41,7 +41,7 @@ protected:
 	UFUNCTION()
 	void OnRep_Health();
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditDefaultsOnly, Category="Health")
 	int MaxHealth = 5;
 
 	int i = 0;
