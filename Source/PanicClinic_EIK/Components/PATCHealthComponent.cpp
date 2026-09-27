@@ -3,7 +3,7 @@
 
 #include "PATCHealthComponent.h"
 #include "Net/UnrealNetwork.h"
-#include "PanicClinic_EIK/Interfaces/PATCDeath.h"
+#include "PanicClinic_EIK/Interfaces/PATCHealthEvents.h"
 
 
 // Sets default values for this component's properties
@@ -11,8 +11,9 @@ UPATCHealthComponent::UPATCHealthComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 	// ...
+	CurrentHealth = MaxHealth;
 }
 
 
@@ -20,27 +21,9 @@ UPATCHealthComponent::UPATCHealthComponent()
 void UPATCHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
 	
-	if (GetOwner()->HasAuthority())
-	{
-		CurrentHealth = MaxHealth;
-
-		
-//Comment this, thats for testing purposes.
-// Note to self: do not test things in begin play EVER
-		//TakeDamage(MaxHealth);
-		
-	}
-}
-
-
-// Called every frame
-void UPATCHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-                                         FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	//Singular check for interface implementation.
+	bImplementsHealthInterface = GetOwner()->Implements<UPATCHealthEvents>();
 	// ...
 }
 
@@ -53,47 +36,41 @@ void UPATCHealthComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProp
 
 void UPATCHealthComponent::OnRep_Health()
 {
-	//TODO - Update UI
 	UE_LOG(LogTemp, Warning, TEXT("Health replicated."))
 }
 
-void UPATCHealthComponent::GainHealth_Implementation(int HealAmount)
+void UPATCHealthComponent::GainHealth(int HealAmount)
 {
+	//This function should only ever be running on server.
 	if (!GetOwner()->HasAuthority()) return;
 
-	int NewHealth = CurrentHealth + HealAmount;
+	CurrentHealth = FMath::Min(CurrentHealth + HealAmount, MaxHealth);
 	
-	if (NewHealth > MaxHealth)
+	if (bImplementsHealthInterface)
 	{
-		CurrentHealth = MaxHealth;
-	}
-
-	else
-	{
-		CurrentHealth = NewHealth;
+		IPATCHealthEvents::Execute_OnHealthReceived(GetOwner());
 	}
 }
 
-void UPATCHealthComponent::TakeDamage_Implementation(int DamageAmount)
+void UPATCHealthComponent::TakeDamage(int DamageAmount)
 {
+	//This function should only ever be running on server.
 	if (!GetOwner()->HasAuthority()) return;
-
-	int NewHealth = CurrentHealth - DamageAmount;
-
-
-	UE_LOG(LogTemp, Warning, TEXT("Took damage"))
-	if (NewHealth <= 0)
+	
+	CurrentHealth = FMath::Max(CurrentHealth - DamageAmount, 0);
+	
+	if (bImplementsHealthInterface)
 	{
-		CurrentHealth = 0;
-		if (GetOwner()->Implements<UPATCDeath>())
-		{
-			IPATCDeath::Execute_OnDeath(GetOwner());
-		}
+		IPATCHealthEvents::Execute_OnDamageTaken(GetOwner());
 	}
-
-	else
+	
+	if (CurrentHealth == 0)
 	{
-		CurrentHealth = NewHealth;
+		if (bImplementsHealthInterface)
+		{
+			//Call the interface to let the actor process its death however it wants to.
+			IPATCHealthEvents::Execute_OnDeath(GetOwner());
+		}
 	}
 }
 
