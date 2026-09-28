@@ -6,6 +6,11 @@
 #include "Components/ActorComponent.h"
 #include "PATCHealthComponent.generated.h"
 
+/*
+ * Overall this class has a few consistency issues that should be ironed out post technical proof:
+ * 1- Death is handled through an interface while health change notification goes through a delegate.
+ * 2- Health is replicated but for an actor to know that their health changed they need to be manually notified, this should not be needed. This makes hit handling pretty damn messy.
+ */
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class PANICCLINIC_EIK_API UPATCHealthComponent : public UActorComponent
@@ -21,16 +26,19 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
-	                           FActorComponentTickFunction* ThisTickFunction) override;
 
-	UFUNCTION(Server, Reliable)
+	UFUNCTION()
 	void TakeDamage(int DamageAmount);
 
-	UFUNCTION(Server, Reliable)
+	UFUNCTION()
 	void GainHealth(int HealAmount);
-
+	
+	UFUNCTION(BlueprintCallable)
+	int GetCurrentHealth()
+	{
+		return CurrentHealth;
+	}
+	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
@@ -43,6 +51,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Health")
 	int MaxHealth = 5;
-
-	int i = 0;
+	
+	bool bImplementsHealthInterface = false;
 };
