@@ -45,9 +45,9 @@ public:
 	
 	virtual void OnInteracted_Implementation(ACharacter* InstigatorCharacter) override;
 
-	virtual void OnStarted_Implementation(ACharacter* InstigatorCharacter) override;
+	virtual void OnUseStarted_Implementation(ACharacter* InstigatorCharacter) override;
 
-	virtual void OnTriggered_Implementation(ACharacter* InstigatorCharacter) override
+	virtual void OnUseStopped_Implementation(ACharacter* InstigatorCharacter) override
 	{
 		return;
 	}

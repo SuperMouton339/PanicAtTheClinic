@@ -44,6 +44,7 @@ void UPATCInteractionDetector::OnComponentOverlapBegin(UPrimitiveComponent* Over
 		// HasAuthority first: cheapest check, short-circuits on the server.
 		if (( GetOwner()->HasAuthority() || OwnerPawn->IsLocallyControlled()) && OtherActor->Implements<UPATCInteractable>())
 		{
+			// TODO - Move debug UE_LOGs to a custom log category (e.g. LogPATCNet) or remove them before the demo.
 			UE_LOG(LogTemp, Warning, TEXT("Owner Name: %s, HasAuthority : %s, Is LocallyControlled : %s"), *GetOwner()->GetName(), 
 				(GetOwner()->HasAuthority() ? TEXT("True") : TEXT("False")) ,(OwnerPawn->IsLocallyControlled() ? TEXT("True") : TEXT("False")));
 			
@@ -61,6 +62,7 @@ void UPATCInteractionDetector::OnComponentOverlapEnd(UPrimitiveComponent* Overla
 	{
 		if (( GetOwner()->HasAuthority() || OwnerPawn->IsLocallyControlled()) && OtherActor->Implements<UPATCInteractable>())
 		{
+			// TODO - Move debug UE_LOGs to a custom log category (e.g. LogPATCNet) or remove them before the demo.
 			UE_LOG(LogTemp, Warning, TEXT("Owner Name: %s, HasAuthority : %s, Is LocallyControlled : %s"), *GetOwner()->GetName(), 
 				(GetOwner()->HasAuthority() ? TEXT("True") : TEXT("False")) ,(OwnerPawn->IsLocallyControlled() ? TEXT("True") : TEXT("False")));
 			

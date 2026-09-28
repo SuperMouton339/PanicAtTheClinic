@@ -9,6 +9,11 @@
 #include "Net/UnrealNetwork.h"
 #include "PanicClinic_EIK/EquippableItems/PATCConsumable.h"
 
+// TODO - OnInteracted now runs on the SERVER (via ServerInteract): IsLocallyControlled() is false
+//        for remote players there, so only the host could ever open the popup.
+// TODO - ServerSpawnConsumable is NetMulticast (runs everywhere) and uses NewObject (creates no actor):
+//        must be server code using GetWorld()->SpawnActor, triggered by an RPC on the Character.
+  
 // Sets default values
 APATCObjectSpawner::APATCObjectSpawner()
 {

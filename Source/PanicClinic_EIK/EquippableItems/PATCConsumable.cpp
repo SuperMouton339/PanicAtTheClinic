@@ -36,6 +36,9 @@ void APATCConsumable::OnRep_Uses()
 {
 	APawn* OwnerCharacter = Cast<APawn>(GetOwner());
 	
+	UE_LOG(LogTemp, Warning, TEXT("%s CurrentUses: %d, HasAuthority: %s"),
+	*GetName(), CurrentUses, HasAuthority() ? TEXT("True") : TEXT("False"));
+	
 	if (OwnerCharacter == nullptr) return;
 	
 	if (OwnerCharacter->IsLocallyControlled())
@@ -101,21 +104,32 @@ void APATCConsumable::OnInteracted_Implementation(ACharacter* InstigatorCharacte
 	return;
 }
 
-void APATCConsumable::OnStarted_Implementation(ACharacter* InstigatorCharacter)
+void APATCConsumable::OnUseStarted_Implementation(ACharacter* InstigatorCharacter)
 {
 	// BlueprintNativeEvent, NOT an RPC: runs on whichever machine calls it.
 	// CurrentUses is replicated, so only the server may change it.
 	// Intended caller: APATCCharacter::Server_StartUse (next session).
+	
+	// Instant treatment for the tech demo (no channeling).
+	// TODO - If channeling comes back: start a server timer here, cancel it in OnUseStopped,
+	// and move CurrentUses -= 1 to the timer's completion (a canceled heal must not burn a use).
+	// TODO - Patient gate: refuse if no patient in range needs this TreatmentType (item-specific validation).
+	
 	if (!HasAuthority()) return;
 	
 	//Since this is not blueprint callable, will need to be called by Character
 	CurrentUses -= 1;
-	
+	UE_LOG(LogTemp, Warning, TEXT("%s CurrentUses: %d, HasAuthority: %s"),
+	*GetName(), CurrentUses, HasAuthority() ? TEXT("True") : TEXT("False"));
 	OnRep_Uses();
 	if (CurrentUses <= 0)
 	{
-			//TODO - Consume object
-		
+		if (APATCCharacter* Character = Cast<APATCCharacter>(InstigatorCharacter))
+		{
+			Character->UnequipItem();
+			
+		}
+		Destroy();
 	}
 	return;
 }

@@ -66,19 +66,51 @@ void APATCCharacter::ServerInteract_Implementation(AActor* ActorToInteract)
 	
 }
 
+void APATCCharacter::ServerStartUse_Implementation()
+{
+	
+	// Network entry point: validate everything. Execute_ hits a check() (crash) if the interface is missing.
+	if (!IsValid(EquippedItem)|| !EquippedItem->Implements<UPATCEquippableItem>())
+	{
+		// TODO - Move debug UE_LOGs to a custom log category (e.g. LogPATCNet) or remove them before the demo.
+		UE_LOG(LogTemp,Warning,TEXT("Refused"));
+		return;
+	}
+	
+	// TODO - Move debug UE_LOGs to a custom log category (e.g. LogPATCNet) or remove them before the demo.
+	UE_LOG(LogTemp,Warning,TEXT("Character Name: %s : Has Authority? %s"), *GetName(), 
+		(HasAuthority() ? TEXT("True") : TEXT("False")));
+	IPATCEquippableItem::Execute_OnUseStarted(EquippedItem, this);
+	
+}
+
+void APATCCharacter::ServerStopUse_Implementation()
+{
+	if (!IsValid(EquippedItem) || !EquippedItem->Implements<UPATCEquippableItem>()) return;
+	UE_LOG(LogTemp,Warning,TEXT("Character Name: %s : Has Authority? %s"), *GetName(), 
+		(HasAuthority() ? TEXT("True") : TEXT("False")));
+	IPATCEquippableItem::Execute_OnUseStopped(EquippedItem, this);
+}
+
 void APATCCharacter::OnRep_EquippedItem()
 {
 
 
 	if (IsLocallyControlled())
-	{	//TODO - Apply changes to UI
+	{	
+		//TODO - Apply changes to UI
+		// TODO - nullptr means the item was consumed/dropped: clear the UI here instead of returning.
+		// Don't rely on OnRep_Uses reaching 0: a destroyed actor may close its channel before the last value is sent.
 		if (EquippedItem == nullptr) return;
+		
+		// TODO - Move debug UE_LOGs to a custom log category (e.g. LogPATCNet) or remove them before the demo.
 		UE_LOG(LogTemp, Warning, TEXT("%s equipped %s"), *GetNetOwner()->GetName(), *EquippedItem->GetName());
 	}
 	
 	if (!IsLocallyControlled())
 	{
 		//TODO - Show every player that this player picked up an item (Player himself should've already handled the animations somewhere else)
+		
 		UE_LOG(LogTemp, Warning, TEXT("Owner Name: %s, HasAuthority : %s, Is LocallyControlled : %s"), *this->GetName(), 
 				(HasAuthority() ? TEXT("True") : TEXT("False")) ,(IsLocallyControlled() ? TEXT("True") : TEXT("False")));
 	}
@@ -128,6 +160,19 @@ bool APATCCharacter::EquipNewItem(AActor* ActorToEquip)
 	
 	// Refused: nothing changed, the caller must not treat the item as picked up
 	return false;
+}
+// Server-side unequip. NOT an RPC: only called by server code (e.g. a consumed item).
+void APATCCharacter::UnequipItem()
+{
+	// Server only: EquippedItem is replicated, clients must never write it
+	if (!HasAuthority() || !EquippedItem) return;
+	
+	// Replicates to every client, which then runs OnRep_EquippedItem automatically
+	EquippedItem = nullptr;
+	
+	//the host must update too
+	OnRep_EquippedItem();
+	
 }
 
 void APATCCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
