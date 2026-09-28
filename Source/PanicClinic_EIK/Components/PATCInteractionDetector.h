@@ -6,7 +6,8 @@
 #include "Components/CapsuleComponent.h"
 #include "PATCInteractionDetector.generated.h"
 
-
+//Detects interactables in range of the owning pawn
+//No RPCS on purpose: Collision exists on every machine, so the servers gets its own overlap events for every player.
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class PANICCLINIC_EIK_API UPATCInteractionDetector : public UCapsuleComponent
 {
@@ -20,24 +21,9 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 	
-	/*
-	 *	Server functions.
-	 */
-	
-	UFUNCTION(Server, Reliable)
-	void ServerAddToInteractionList(AActor* ActorToAdd);
-	
-	void ServerAddToInteractionList_Implementation(AActor* ActorToAdd);
-	
-	UFUNCTION(Server, Reliable)
-	void ServerRemoveFromInteractionList(AActor* ActorToRemove);
-	
-	void ServerRemoveFromInteractionList_Implementation(AActor* ActorToRemove);
+
 	
 public:
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
-	                           FActorComponentTickFunction* ThisTickFunction) override;
 		
 	UFUNCTION()
 	void OnComponentOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -46,19 +32,21 @@ public:
 	void OnComponentOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 	
 	
-	UFUNCTION()
-	void OnRep_InteractionList();
 	
-	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
+	// Read-only access to the list: returns a reference (no copy), and does not modify the component
 	UFUNCTION(BlueprintCallable)
-	TArray<AActor*> GetInteractionList()
+	const TArray<AActor*>& GetInteractionList() const
 	{
 		return InteractionList;
 	}
 
 protected:
-	
-	UPROPERTY(ReplicatedUsing=OnRep_InteractionList, BlueprintReadOnly)
+	// Interactables currently overlapping this detector.
+	// NOT replicated: each machine that needs it fills its own copy from its own overlaps.
+	//  - Server (HasAuthority): validates ServerInteract requests
+	//  - Owning client (IsLocallyControlled): picks the target and drives the prompt UI
+	// Other players' characters on this machine (simulated proxies) keep it empty.
+	UPROPERTY(BlueprintReadOnly)
 	TArray<AActor*> InteractionList;
 };

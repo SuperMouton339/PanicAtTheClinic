@@ -34,11 +34,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	EPATCTreatmentTypes TreatmentType;
 	
-	UPROPERTY(Replicated)
-	ACharacter* OwningPlayer;
-	
 	UFUNCTION()
 	void OnRep_Uses();
+	
+	// Called on clients when Owner replicates; called manually on the server after SetOwner.
+	// Owned (held) items must not be detectable: collision off. Dropped items: collision back on.
+	virtual void OnRep_Owner() override;
 	
 public:
 	

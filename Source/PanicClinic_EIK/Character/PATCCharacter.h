@@ -34,6 +34,7 @@ protected:
 	
 	/** Temp Ground **/
 	
+	/** ***/
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Components")
 	TObjectPtr<UPATCInteractionDetector> InteractionDetector;
 	
@@ -55,10 +56,12 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
-	UFUNCTION(Server, Reliable)
-	void ServerEquipNewItem(AActor* ActorToEquip);
+	// Server-side equip. NOT an RPC: only called by server code (e.g. OnInteracted),
+	// so clients have no network entry point to equip arbitrary items.
+	// Returns false if the equip was refused, so the caller can leave the item in the world.
+	UFUNCTION()
+	bool EquipNewItem(AActor* ActorToEquip);
 	
-	void ServerEquipNewItem_Implementation(AActor* ActorToEquip);
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 

@@ -2,7 +2,6 @@
 
 
 #include "PATCInteractionDetector.h"
-#include "Net/UnrealNetwork.h"
 #include "PanicClinic_EIK/Interfaces/PATCInteractable.h"
 
 
@@ -14,7 +13,7 @@ UPATCInteractionDetector::UPATCInteractionDetector()
 	
 	
 	
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 	OnComponentBeginOverlap.AddDynamic(this, &UPATCInteractionDetector::OnComponentOverlapBegin);
 	OnComponentEndOverlap.AddDynamic(this, &UPATCInteractionDetector::OnComponentOverlapEnd);
 	// ...
@@ -30,66 +29,46 @@ void UPATCInteractionDetector::BeginPlay()
 	
 }
 
-void UPATCInteractionDetector::ServerAddToInteractionList_Implementation(AActor* ActorToAdd)
-{
-	//TODO - Add verification that the interaction is in fact valid on the server side.
-	
-	InteractionList.Add(ActorToAdd);
-}
-
-void UPATCInteractionDetector::ServerRemoveFromInteractionList_Implementation(AActor* ActorToRemove)
-{
-	//TODO - Add verification that the interaction is in fact valid on the server side.
-	InteractionList.Remove(ActorToRemove);
-}
-
-
-// Called every frame
-void UPATCInteractionDetector::TickComponent(float DeltaTime, ELevelTick TickType,
-                                             FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
-}
 
 
 void UPATCInteractionDetector::OnComponentOverlapBegin(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
 	const FHitResult& SweepResult)
-{		
-
-	//I don't do a check for local here because server requests should only be validated when the client owns the PC
-	if (!GetOwner()->HasAuthority() && GetOwner()->HasLocalNetOwner() && OtherActor->Implements<UPATCInteractable>())
+{	
+	
+	// Only pawns can be locally controlled; ignore if attached to anything else
+	if (APawn* OwnerPawn = Cast<APawn>(GetOwner()))
 	{
-
-		ServerAddToInteractionList(OtherActor);
+		// Server needs the list to validate, owning client needs it for targeting/UI.
+		// The listen-server host is both, but this single if still adds the actor once.
+		// HasAuthority first: cheapest check, short-circuits on the server.
+		if (( GetOwner()->HasAuthority() || OwnerPawn->IsLocallyControlled()) && OtherActor->Implements<UPATCInteractable>())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Owner Name: %s, HasAuthority : %s, Is LocallyControlled : %s"), *GetOwner()->GetName(), 
+				(GetOwner()->HasAuthority() ? TEXT("True") : TEXT("False")) ,(OwnerPawn->IsLocallyControlled() ? TEXT("True") : TEXT("False")));
+			
+			// AddUnique: an item with several collision components overlaps several times
+			InteractionList.AddUnique(OtherActor);
+		}
 	}
+	
 }
 
 void UPATCInteractionDetector::OnComponentOverlapEnd(UPrimitiveComponent* OverlappedComp,
 	AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	//I don't do a check for local here because server requests should only be validated when the client owns the PC
-	if (!GetOwner()->HasAuthority() && GetOwner()->HasLocalNetOwner() && OtherActor->Implements<UPATCInteractable>())
+	if (APawn* OwnerPawn = Cast<APawn>(GetOwner()))
 	{
-
-		ServerRemoveFromInteractionList(OtherActor);
+		if (( GetOwner()->HasAuthority() || OwnerPawn->IsLocallyControlled()) && OtherActor->Implements<UPATCInteractable>())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Owner Name: %s, HasAuthority : %s, Is LocallyControlled : %s"), *GetOwner()->GetName(), 
+				(GetOwner()->HasAuthority() ? TEXT("True") : TEXT("False")) ,(OwnerPawn->IsLocallyControlled() ? TEXT("True") : TEXT("False")));
+			
+			// Same machines as OverlapBegin, so the list stays symmetrical
+			InteractionList.Remove(OtherActor);
+		}
 	}
 }
 
-void UPATCInteractionDetector::OnRep_InteractionList()
-{
-	//TODO - Update UI to show interactable options.
-	for (auto it : InteractionList)
-	{
-		
-	}
-}
 
-void UPATCInteractionDetector::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UPATCInteractionDetector, InteractionList);
-}
 

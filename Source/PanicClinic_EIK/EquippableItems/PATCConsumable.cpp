@@ -34,9 +34,11 @@ void APATCConsumable::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>
 
 void APATCConsumable::OnRep_Uses()
 {
-	if (OwningPlayer == nullptr) return;
+	APawn* OwnerCharacter = Cast<APawn>(GetOwner());
 	
-	if (OwningPlayer->IsLocallyControlled())
+	if (OwnerCharacter == nullptr) return;
+	
+	if (OwnerCharacter->IsLocallyControlled())
 	{
 		// Reasoning here is that only the owner (and if said owner is local) should see a change on his HUD related to the item's use.
 		
@@ -44,18 +46,49 @@ void APATCConsumable::OnRep_Uses()
 	}
 }
 
+void APATCConsumable::OnRep_Owner()
+{
+	Super::OnRep_Owner();
+	
+	// Collision is not replicated: each machine applies it locally from the replicated Owner.
+	// Disabling collision fires EndOverlap on every detector touching the item, on this machine.
+	if (GetOwner())
+	{
+		SetActorEnableCollision(false);
+	}
+	else
+	{
+		SetActorEnableCollision(true);
+	}
+}
+
 void APATCConsumable::OnInteracted_Implementation(ACharacter* InstigatorCharacter)
 {
-	//TODO - Equip item (through server)
 	
+	// Prevent a second player pressing E on the same frame and is refused because this Consumable has already an Owner
+	if (GetOwner()) return;
+	
+	// Called by APATCCharacter::ServerInteract, so this always runs on the server.
+	// The guard documents that assumption and protects against a future client-side call.
 	if (HasAuthority())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Currently being equipped by someone."));
 		
 		if (APATCCharacter* Character = Cast<APATCCharacter>(InstigatorCharacter))
 		{
-			Character->ServerEquipNewItem(this);
-			OwningPlayer = InstigatorCharacter;
+			// The character decides if it can take the item (e.g. hands already full)
+			bool bItemEquipped = Character->EquipNewItem(this);
+			
+			// Equip refused: leave the item untouched in the world
+			if (!bItemEquipped) return;
+			
+			UE_LOG(LogTemp, Warning, TEXT("Currently being equipped by someone."));
+			
+			// Owner replicates to clients, which then run OnRep_Owner automatically
+			SetOwner(InstigatorCharacter);
+			
+			// OnRep is never triggered on the server: so recalling mannually OnRep_Owner for the server
+			OnRep_Owner();
+			// bHidden is replicated: hides the item on every machine
 			SetActorHiddenInGame(true);
 		}
 	}
@@ -70,15 +103,19 @@ void APATCConsumable::OnInteracted_Implementation(ACharacter* InstigatorCharacte
 
 void APATCConsumable::OnStarted_Implementation(ACharacter* InstigatorCharacter)
 {
-	//Since this is not blueprint callable, will need to be called by player controller
+	// BlueprintNativeEvent, NOT an RPC: runs on whichever machine calls it.
+	// CurrentUses is replicated, so only the server may change it.
+	// Intended caller: APATCCharacter::Server_StartUse (next session).
+	if (!HasAuthority()) return;
+	
+	//Since this is not blueprint callable, will need to be called by Character
 	CurrentUses -= 1;
-		
+	
+	OnRep_Uses();
 	if (CurrentUses <= 0)
 	{
-		if (HasAuthority())
-		{
 			//TODO - Consume object
-		}
+		
 	}
 	return;
 }

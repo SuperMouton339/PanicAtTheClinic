@@ -11,6 +11,7 @@
 #include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "PanicClinic_EIK/Components/PATCInteractionDetector.h"
+#include "PanicClinic_EIK/EquippableItems/PATCConsumable.h"
 #include "PanicClinic_EIK/Interfaces/PATCEquippableItem.h"
 #include "PanicClinic_EIK/Interfaces/PATCInteractable.h"
 
@@ -56,10 +57,13 @@ void APATCCharacter::Move(const FInputActionValue& Value)
 
 void APATCCharacter::ServerInteract_Implementation(AActor* ActorToInteract)
 {
-	if (ActorToInteract->Implements<UPATCInteractable>())
-	{
-		IPATCInteractable::Execute_OnInteracted(ActorToInteract, this);
-	}
+	// Server-side validation: the client only proposes a target, the server decides.
+	// Reject null and anything not in the server's own overlap list (range check without trusting the client).
+	if (!ActorToInteract || !InteractionDetector->GetInteractionList().Contains(ActorToInteract)) return;
+	
+	// The detector only lists IPATCInteractable actors, so Execute_ is safe once the list check passed
+	IPATCInteractable::Execute_OnInteracted(ActorToInteract, this);
+	
 }
 
 void APATCCharacter::OnRep_EquippedItem()
@@ -75,6 +79,8 @@ void APATCCharacter::OnRep_EquippedItem()
 	if (!IsLocallyControlled())
 	{
 		//TODO - Show every player that this player picked up an item (Player himself should've already handled the animations somewhere else)
+		UE_LOG(LogTemp, Warning, TEXT("Owner Name: %s, HasAuthority : %s, Is LocallyControlled : %s"), *this->GetName(), 
+				(HasAuthority() ? TEXT("True") : TEXT("False")) ,(IsLocallyControlled() ? TEXT("True") : TEXT("False")));
 	}
 }
 
@@ -103,12 +109,25 @@ void APATCCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	
 }
 
-void APATCCharacter::ServerEquipNewItem_Implementation(AActor* ActorToEquip)
+bool APATCCharacter::EquipNewItem(AActor* ActorToEquip)
 {
-	if (ActorToEquip->Implements<UPATCEquippableItem>())
+	// Server only: EquippedItem is replicated, clients must never write it
+	if (!HasAuthority() || !ActorToEquip) return false;
+	
+	// Only equippable items, and only if the hands are empty
+	if (ActorToEquip->Implements<UPATCEquippableItem>() && EquippedItem == nullptr)
 	{
+		// Replicates to every client, which then runs OnRep_EquippedItem automatically
 		EquippedItem = ActorToEquip;
+		
+		// OnRep is never triggered on the server,
+		// Nice to know: the listen-server host is also a player and must see every pickup (its own and others)
+		OnRep_EquippedItem();
+		return true;
 	}
+	
+	// Refused: nothing changed, the caller must not treat the item as picked up
+	return false;
 }
 
 void APATCCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
