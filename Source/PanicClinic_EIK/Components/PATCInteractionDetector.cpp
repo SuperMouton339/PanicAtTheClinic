@@ -42,7 +42,7 @@ void UPATCInteractionDetector::OnComponentOverlapBegin(UPrimitiveComponent* Over
 		// Server needs the list to validate, owning client needs it for targeting/UI.
 		// The listen-server host is both, but this single if still adds the actor once.
 		// HasAuthority first: cheapest check, short-circuits on the server.
-		if (( GetOwner()->HasAuthority() || OwnerPawn->IsLocallyControlled()) && OtherActor->Implements<UPATCInteractable>())
+		if (( GetOwner()->HasAuthority() || OwnerPawn->IsLocallyControlled()) && OtherActor->Implements<UPATCInteractable>() && OtherActor != GetOwner())
 		{
 			// TODO - Move debug UE_LOGs to a custom log category (e.g. LogPATCNet) or remove them before the demo.
 			UE_LOG(LogTemp, Warning, TEXT("Owner Name: %s, HasAuthority : %s, Is LocallyControlled : %s"), *GetOwner()->GetName(), 
@@ -50,6 +50,7 @@ void UPATCInteractionDetector::OnComponentOverlapBegin(UPrimitiveComponent* Over
 			
 			// AddUnique: an item with several collision components overlaps several times
 			InteractionList.AddUnique(OtherActor);
+			OnInteractionListModified.Broadcast(GetClosestInteractableItem());
 		}
 	}
 	
@@ -60,7 +61,7 @@ void UPATCInteractionDetector::OnComponentOverlapEnd(UPrimitiveComponent* Overla
 {
 	if (APawn* OwnerPawn = Cast<APawn>(GetOwner()))
 	{
-		if (( GetOwner()->HasAuthority() || OwnerPawn->IsLocallyControlled()) && OtherActor->Implements<UPATCInteractable>())
+		if (( GetOwner()->HasAuthority() || OwnerPawn->IsLocallyControlled()) && OtherActor->Implements<UPATCInteractable>() && OtherActor != GetOwner())
 		{
 			// TODO - Move debug UE_LOGs to a custom log category (e.g. LogPATCNet) or remove them before the demo.
 			UE_LOG(LogTemp, Warning, TEXT("Owner Name: %s, HasAuthority : %s, Is LocallyControlled : %s"), *GetOwner()->GetName(), 
@@ -68,8 +69,31 @@ void UPATCInteractionDetector::OnComponentOverlapEnd(UPrimitiveComponent* Overla
 			
 			// Same machines as OverlapBegin, so the list stays symmetrical
 			InteractionList.Remove(OtherActor);
+			OnInteractionListModified.Broadcast(GetClosestInteractableItem());
 		}
 	}
+}
+
+AActor* UPATCInteractionDetector::GetClosestInteractableItem() const
+{
+	AActor* ClosestActor = nullptr;
+	FVector PlayerLocation = GetOwner()->GetActorLocation();
+	float BaseDistSq = TNumericLimits<float>::Max();
+	for (AActor* Actor : InteractionList)
+	{
+		if (IsValid(Actor))
+		{
+			FVector ActorLocation = Actor->GetActorLocation();
+			float DistanceSq = FVector::DistSquaredXY(PlayerLocation, ActorLocation);
+			if (DistanceSq < BaseDistSq)
+			{
+				BaseDistSq = DistanceSq;
+				ClosestActor = Actor;
+			}
+		}
+		
+	}
+	return ClosestActor;
 }
 
 

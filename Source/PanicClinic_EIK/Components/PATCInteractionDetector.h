@@ -6,6 +6,9 @@
 #include "Components/CapsuleComponent.h"
 #include "PATCInteractionDetector.generated.h"
 
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInteractionListModified, AActor*, ClosestInteractable);
+
 //Detects interactables in range of the owning pawn
 //No RPCS on purpose: Collision exists on every machine, so the servers gets its own overlap events for every player.
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -16,6 +19,8 @@ class PANICCLINIC_EIK_API UPATCInteractionDetector : public UCapsuleComponent
 public:
 	// Sets default values for this component's properties
 	UPATCInteractionDetector();
+	UPROPERTY(BlueprintAssignable)
+	FOnInteractionListModified OnInteractionListModified;
 
 protected:
 	// Called when the game starts
@@ -41,6 +46,11 @@ public:
 		return InteractionList;
 	}
 
+	
+	
+	UFUNCTION(BlueprintPure)
+	AActor* GetClosestInteractableItem() const;
+	
 protected:
 	// Interactables currently overlapping this detector.
 	// NOT replicated: each machine that needs it fills its own copy from its own overlaps.
@@ -49,4 +59,6 @@ protected:
 	// Other players' characters on this machine (simulated proxies) keep it empty.
 	UPROPERTY(BlueprintReadOnly)
 	TArray<AActor*> InteractionList;
+
+	
 };

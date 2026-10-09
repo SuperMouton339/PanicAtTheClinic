@@ -11,7 +11,7 @@
  * 1- Death is handled through an interface while health change notification goes through a delegate.
  * 2- Health is replicated but for an actor to know that their health changed they need to be manually notified, this should not be needed. This makes hit handling pretty damn messy.
  */
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerHealthChanged, int32, NewHealth);
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class PANICCLINIC_EIK_API UPATCHealthComponent : public UActorComponent
 {
@@ -20,6 +20,8 @@ class PANICCLINIC_EIK_API UPATCHealthComponent : public UActorComponent
 public:
 	// Sets default values for this component's properties
 	UPATCHealthComponent();
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayerHealthChanged OnPlayerHealthChanged;
 
 protected:
 	// Called when the game starts
@@ -27,16 +29,24 @@ protected:
 
 public:
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void TakeDamage(int DamageAmount);
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void GainHealth(int HealAmount);
 	
 	UFUNCTION(BlueprintCallable)
-	int GetCurrentHealth()
+	void ReviveCharacter(int HealAmount);
+	
+	UFUNCTION(BlueprintPure)
+	int GetCurrentHealth() const
 	{
 		return CurrentHealth;
+	}
+	UFUNCTION(BlueprintPure)
+	int GetMaxHealth() const
+	{
+		return MaxHealth;
 	}
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
@@ -53,4 +63,6 @@ protected:
 	int MaxHealth = 5;
 	
 	bool bImplementsHealthInterface = false;
+	
+
 };

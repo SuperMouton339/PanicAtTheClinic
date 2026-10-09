@@ -18,10 +18,6 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	
-	FTimerHandle DemoTimerHandle;
-	
-	void SimulateTakeDamage();
 
 public:
 	// Called every frame

@@ -5,6 +5,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
 #include "PATCCameraManager.h"
+#include "Net/UnrealNetwork.h"
+#include "PanicClinic_EIK/Minigames/PATCMinigame.h"
 
 APATCPlayerController::APATCPlayerController()
 {
@@ -37,4 +39,54 @@ void APATCPlayerController::BeginPlay()
 		}
 	}
 	
+}
+
+void APATCPlayerController::OnRep_ActiveMinigame()
+{
+	if (!IsLocalController()) return;
+	
+	if (ActiveMinigameInstance == nullptr) return;
+	
+	if (ActiveMinigameInstance->GetInputMappingContext() == nullptr) return;
+		
+	ULocalPlayer* LP = GetLocalPlayer();
+	if (!LP) return;
+		
+	UEnhancedInputLocalPlayerSubsystem* EILPlayerSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP);
+	if (!EILPlayerSubsystem) return;
+		
+	MinigameMappingContext = ActiveMinigameInstance->GetInputMappingContext();
+	EILPlayerSubsystem->AddMappingContext(MinigameMappingContext,0);
+		
+	EILPlayerSubsystem->RemoveMappingContext(DefaultMappingContext);
+	
+	RegisterNewMinigame();
+	
+}
+
+void APATCPlayerController::StopActiveMinigame()
+{
+	
+	if (!IsLocalController()) return;
+	
+	ULocalPlayer* LP = GetLocalPlayer();
+	if (!LP) return;
+		
+	UEnhancedInputLocalPlayerSubsystem* EILPlayerSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP);
+	if (!EILPlayerSubsystem) return;
+		
+
+	EILPlayerSubsystem->AddMappingContext(DefaultMappingContext,0);
+		
+	//Kept this like that instead of checking for nullptr because it makes the function easier to extend later on.
+	if (MinigameMappingContext != nullptr)
+	{
+		EILPlayerSubsystem->RemoveMappingContext(MinigameMappingContext);
+	}
+}
+
+void APATCPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(APATCPlayerController, ActiveMinigameInstance);
 }

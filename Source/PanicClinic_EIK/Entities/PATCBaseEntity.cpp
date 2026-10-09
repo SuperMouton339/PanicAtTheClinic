@@ -28,13 +28,11 @@ void APATCBaseEntity::OnDeath_Implementation()
 {
 	//This is the base entity, this function will be overriden for more specific behavior.
 	//The destruction (or whatever we want to do with a dead actor) should happen after being triggered by the animation.	
+	if (!HasAuthority()) return;
 	
 	MulticastTriggerDeathAnim();
 	
-	if (HasAuthority())
-	{
-		GetWorldTimerManager().SetTimer(DeathTimerHandle, this, &APATCBaseEntity::KillEntity, 1.f, false);
-	}
+	GetWorldTimerManager().SetTimer(DeathTimerHandle, this, &APATCBaseEntity::KillEntity, 0.3f, false);
 }
 
 void APATCBaseEntity::OnDamageTaken_Implementation()

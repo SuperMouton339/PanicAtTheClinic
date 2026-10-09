@@ -9,9 +9,13 @@
 /**
  * 
  */
+
+DECLARE_LOG_CATEGORY_EXTERN(LogPATCNetGameMode, Log, All);
+
 UCLASS()
 class PANICCLINIC_EIK_API APATCGameMode : public AGameMode
 {
 	GENERATED_BODY()
-	
+protected:
+	virtual void GenericPlayerInitialization(AController* C) override;
 };

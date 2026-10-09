@@ -18,4 +18,7 @@ public:
 	
 	UFUNCTION(BlueprintNativeEvent)
 	void OnInteracted(ACharacter* InstigatorCharacter);
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void SetPromptVisibility(bool bNewVisibility);
 };

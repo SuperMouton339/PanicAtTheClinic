@@ -3,14 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
 #include "PanicClinic_EIK/Interfaces/PATCHealthEvents.h"
+#include "GameFramework/Character.h"
 #include "PATCBaseEntity.generated.h"
+
 
 class UPATCHealthComponent;
 
 UCLASS()
-class PANICCLINIC_EIK_API APATCBaseEntity : public APawn, public IPATCHealthEvents
+class PANICCLINIC_EIK_API APATCBaseEntity : public ACharacter, public IPATCHealthEvents
 {
 	GENERATED_BODY()
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PATCBaseEquippable.h"
 #include "GameFramework/Actor.h"
 #include "PanicClinic_EIK/Enums/PATCTreatmentTypes.h"
 #include "PanicClinic_EIK/Interfaces/PATCInteractable.h"
@@ -10,7 +11,7 @@
 #include "PATCConsumable.generated.h"
 
 UCLASS()
-class PANICCLINIC_EIK_API APATCConsumable : public AActor, public IPATCInteractable, public IPATCEquippableItem
+class PANICCLINIC_EIK_API APATCConsumable : public APATCBaseEquippable
 {
 	GENERATED_BODY()
 
@@ -42,9 +43,8 @@ protected:
 	virtual void OnRep_Owner() override;
 	
 public:
-	
-	virtual void OnInteracted_Implementation(ACharacter* InstigatorCharacter) override;
 
+	virtual void OnInteracted_Implementation(ACharacter* InstigatorCharacter) override;
 	virtual void OnUseStarted_Implementation(ACharacter* InstigatorCharacter) override;
 
 	virtual void OnUseStopped_Implementation(ACharacter* InstigatorCharacter) override

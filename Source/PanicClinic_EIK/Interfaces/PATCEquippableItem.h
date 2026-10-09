@@ -29,4 +29,8 @@ public:
 	// May be called without a matching OnUseStarted (e.g. item equipped while the key was held): must be safe to call anytime.
 	UFUNCTION(BlueprintNativeEvent)
 	void OnUseStopped(ACharacter* InstigatorCharacter);
+	
+	// Function called from Server_DropItem in PATCCharacter server side
+	UFUNCTION(BlueprintNativeEvent)
+	void OnDropped(FVector DroppedPosition);
 };

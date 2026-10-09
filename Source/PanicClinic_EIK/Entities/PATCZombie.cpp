@@ -17,16 +17,6 @@ APATCZombie::APATCZombie()
 void APATCZombie::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	if (HasAuthority())
-	{
-		GetWorldTimerManager().SetTimer(DemoTimerHandle, this, &APATCZombie::SimulateTakeDamage, 2.f, true);
-	}
-}
-
-void APATCZombie::SimulateTakeDamage()
-{
-	HealthComponent->TakeDamage(1);
 }
 
 // Called every frame

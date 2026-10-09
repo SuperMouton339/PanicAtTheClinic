@@ -10,8 +10,10 @@
  * 
  */
 
+
 //Forward Declare
 class UInputMappingContext;
+class APATCMinigame;
 
 UCLASS()
 class PANICCLINIC_EIK_API APATCPlayerController : public APlayerController
@@ -25,5 +27,31 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
+	
+	UPROPERTY(ReplicatedUsing=OnRep_ActiveMinigame, BlueprintReadOnly, Category="Minigames")
+	TObjectPtr<APATCMinigame> ActiveMinigameInstance;
+	
+	UPROPERTY()
+	TObjectPtr<UInputMappingContext> MinigameMappingContext;
+	
+	UFUNCTION()
+	void OnRep_ActiveMinigame();
+	
+	UFUNCTION(BlueprintImplementableEvent)
+	void RegisterNewMinigame();
+	
+public:
+	
+	UFUNCTION(BlueprintCallable)
+	void SetActiveMinigame(APATCMinigame* NewMinigame)
+	{
+		ActiveMinigameInstance = NewMinigame;
+		OnRep_ActiveMinigame();
+	}
+	
+	UFUNCTION(BlueprintCallable)
+	void StopActiveMinigame();
+	
+	void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 };

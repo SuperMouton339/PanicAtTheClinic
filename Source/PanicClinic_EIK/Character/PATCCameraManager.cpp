@@ -30,9 +30,6 @@ void APATCCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTime)
 		if (const APawn* PlayerPawn = PlayerState->GetPawn())
 		{
 			PlayersLocations.Add(PlayerPawn->GetActorLocation());
-				
-			// Draw a sphere on each player: 1 frame lifetime, redrawn every frame
-			DrawDebugSphere(GetWorld(), PlayersLocations.Last(), 60.f, 12, FColor::Green);
 		}
 	}
 	
